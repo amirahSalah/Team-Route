@@ -14,7 +14,7 @@ models_dir = Path('models')
 try:
     tfidf_vec = joblib.load(models_dir / 'tfidf_vectorizer.joblib')
     logreg_clf = joblib.load(models_dir / 'logreg_clf.joblib')
-    proc_df = pd.read_parquet(models_dir / 'preprocessed_df.parquet')
+    proc_df = pd.read_parquet(models_dir / 'processed_df.parquet')
     kmeans = joblib.load(models_dir / 'kmeans_topics.joblib') if (models_dir / 'kmeans_topics.joblib').exists() else None
     topic_vec = joblib.load(models_dir / 'tfidf_for_topics.joblib') if (models_dir / 'tfidf_for_topics.joblib').exists() else None
     X_vec_for_topics = joblib.load(models_dir / 'X_vec_for_topics.joblib') if (models_dir / 'X_vec_for_topics.joblib').exists() else None

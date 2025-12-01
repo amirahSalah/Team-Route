@@ -42,7 +42,7 @@ python -V
 ```sh
 # Both platforms (macOS/Linux/Windows):
 python -m pip install --upgrade pip
-python -m pip install streamlit pandas numpy joblib plotly
+python -m pip install streamlit pandas numpy joblib plotly scikit-learn
 ```
 
 ### 6. Run the Streamlit app
