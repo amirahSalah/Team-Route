@@ -12,8 +12,8 @@ st.title("Real-Time Sentiment Analysis Dashboard")
 # Load models and data
 models_dir = Path('models')
 try:
-    tfidf_vec = joblib.load(models_dir / 'tfidf_vectorizer.joblib')
-    logreg_clf = joblib.load(models_dir / 'logreg_clf.joblib')
+    tfidf_vec = joblib.load(models_dir / 'rf_tfidf_ngram12_vectorizer.joblib') 
+    rf_clf = joblib.load(models_dir / 'rf_clf.joblib')
     proc_df = pd.read_parquet(models_dir / 'processed_df.parquet')
     kmeans = joblib.load(models_dir / 'kmeans_topics.joblib') if (models_dir / 'kmeans_topics.joblib').exists() else None
     topic_vec = joblib.load(models_dir / 'tfidf_for_topics.joblib') if (models_dir / 'tfidf_for_topics.joblib').exists() else None
@@ -21,7 +21,7 @@ try:
 except Exception as e:
     st.error(f"Error loading model or data: {e}")
     tfidf_vec = None
-    logreg_clf = None
+    rf_clf = None
     proc_df = None
     kmeans = None
     topic_vec = None
@@ -38,9 +38,9 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 with tab1:
     st.header("Instant Sentiment Analysis")
     user_text = st.text_area("Enter tweet or text for analysis:")
-    if user_text and tfidf_vec and logreg_clf:
+    if user_text and tfidf_vec and rf_clf:
         vec = tfidf_vec.transform([user_text])
-        pred = logreg_clf.predict(vec)[0]
+        pred = rf_clf.predict(vec)[0]
         st.write(f"Predicted Sentiment: **{pred}**")
 
 with tab2:
@@ -89,7 +89,7 @@ with tab4:
         st.write(f"{df['Sentiment'].value_counts().get('Negative', 0)} negative samples out of {len(df)} total samples.")
         total = len(df)
         neg_pct = neg_counts / total if total > 0 else 0
-        if neg_pct > 0.4:
+        if neg_pct > 0.4: # define threshold for negative sentiment spike
             st.error(f"Alert: Negative sentiment spike detected! ({neg_pct:.1%})")
         else:
             st.success("No negative sentiment spike detected.")
