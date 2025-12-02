@@ -74,24 +74,3 @@ def vectorize_data(df, text_column='processed_text'):
     feature_names = tfidf_vectorizer.get_feature_names_out()
     tfidf_df = pd.DataFrame(tfidf_matrix.toarray(), columns=feature_names)
     return tfidf_df, tfidf_vectorizer
-
-def preprocess_text(text: str) -> str:
-    if not isinstance(text, str):
-        return ''
-    text = text.lower()
-    text = re.sub(r'http\S+|www\S+|https\S+', '', text)
-    text = re.sub(r'@\w+', '', text)
-    text = text.replace('#', ' ')
-    text = re.sub(r"[^a-z0-9\s]", ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
-
-def preprocess_df(df: pd.DataFrame, text_column: str = 'Tweet') -> pd.DataFrame:
-    df = df.copy()
-    df[text_column] = df[text_column].fillna('')
-    df['processed_text'] = df[text_column].apply(preprocess_text)
-    df['Sentiment'] = df['Sentiment'].replace({'Irrelevant': 'Neutral'})
-    sentiment_map = {'Negative': 0, 'Neutral': 1, 'Positive': 2}
-    df['label'] = df['Sentiment'].map(sentiment_map).fillna(-1).astype(int)
-    df = df.dropna(subset=[text_column]).reset_index(drop=True)
-    return df
