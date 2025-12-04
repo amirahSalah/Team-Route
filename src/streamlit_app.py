@@ -5,6 +5,13 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 from pathlib import Path
+# Import functions from app.py
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app import preprocess_row
+import app as prep_app
+
 
 st.set_page_config(page_title="Real-Time Sentiment Dashboard", layout="wide")
 st.title("Real-Time Sentiment Analysis Dashboard")
@@ -27,19 +34,23 @@ except Exception as e:
     topic_vec = None
     X_vec_for_topics = None
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab0,tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "Preprocessing",
     "Sentiment Analysis", 
     "Topic Assignment", 
     "Trend Visualization", 
     "Alerts", 
     "Export"
 ])
-
+with tab0:
+    prep_app.display_preproccess_content()
 with tab1:
     st.header("Instant Sentiment Analysis")
     user_text = st.text_area("Enter tweet or text for analysis:")
     if user_text and tfidf_vec and rf_clf:
-        vec = tfidf_vec.transform([user_text])
+        # preprocess text and give it to the vectorizer & model
+        res = preprocess_row(user_text)
+        vec = tfidf_vec.transform([res['cleaned']])
         pred = rf_clf.predict(vec)[0]
         st.write(f"Predicted Sentiment: **{pred}**")
 
@@ -71,11 +82,7 @@ with tab3:
 
 with tab4:
     st.header("Alerts")
-    uploaded = st.file_uploader("Upload processed CSV (optional)", type=["csv"]) 
-    try:
-        import pandas as pd
-    except Exception:
-        pd = None
+    uploaded = st.file_uploader("Upload processed CSV with named columns including [\"Sentiment\"] column to analyze Negative sentiment spikes", type=["csv"]) 
 
     if uploaded is not None and pd is not None:
         df = pd.read_csv(uploaded)
@@ -89,7 +96,7 @@ with tab4:
         st.write(f"{df['Sentiment'].value_counts().get('Negative', 0)} negative samples out of {len(df)} total samples.")
         total = len(df)
         neg_pct = neg_counts / total if total > 0 else 0
-        if neg_pct > 0.4: # define threshold for negative sentiment spike
+        if neg_pct > 0.2: # define sensitive threshold for negative sentiment spike
             st.error(f"Alert: Negative sentiment spike detected! ({neg_pct:.1%})")
         else:
             st.success("No negative sentiment spike detected.")
@@ -98,7 +105,9 @@ with tab4:
             st.warning("Pandas not available to read the CSV. Install pandas in your environment.")
 
     st.write(f"=============================================")
-    st.header("our processed samples:")
+    st.write(f"=============================================")
+    st.write(f"=============================================")
+    st.header("Our twitter processed samples:")
     st.write(proc_df.head(20))
     if proc_df is not None:
         neg_counts = proc_df['Sentiment'].value_counts().get('Negative', 0)

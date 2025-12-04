@@ -82,88 +82,91 @@ def preprocess_row(text):
         'processed_text': processed_text
     }
 
+def display_preproccess_content():
+    st.set_page_config(page_title="Preprocessing - Demo", layout="wide")
+    st.title("Text Preprocessing (Tweet-focused)")
 
-st.set_page_config(page_title="Preprocessing - Demo", layout="wide")
-st.title("Text Preprocessing (Tweet-focused)")
-
-st.markdown("This app performs cleaning, tokenization, lemmatization, and stopword removal. Upload a CSV with a `Tweet` column for batch processing or type a single tweet below.")
+    st.markdown("This app performs cleaning, tokenization, lemmatization, and stopword removal. Upload a CSV with a `Tweet` column for batch processing or type a single tweet below.")
 
 
-with st.sidebar:
-    st.header("Options")
-    show_tfidf = st.checkbox("Compute TF-IDF (sample)", value=False)
-    sublinear_tf = st.checkbox("TF-IDF sublinear_tf=True", value=True)
-    tfidf_max_features = st.number_input("TF-IDF max features (for sample)", min_value=100, max_value=20000, value=2000, step=100)
+    with st.sidebar:
+        st.header("Options")
+        show_tfidf = st.checkbox("Compute TF-IDF (sample)", value=False)
+        sublinear_tf = st.checkbox("TF-IDF sublinear_tf=True", value=True)
+        tfidf_max_features = st.number_input("TF-IDF max features (for sample)", min_value=100, max_value=20000, value=2000, step=100)
 
-left, right = st.columns([1, 1])
-with left:
-    st.subheader("Process single text")
-    input_text = st.text_area("Enter text / tweet here:", height=140)
-    if st.button("Process text"):
-        if not input_text or input_text.strip() == "":
-            st.warning("Please enter some text.")
-        else:
-            res = preprocess_row(input_text)
-            st.subheader("Results")
-            st.markdown("**Original text:**")
-            st.write(res['text'])
-            st.markdown("**Cleaned text:**")
-            st.write(res['cleaned'])
-            st.markdown("**Hashtags:**")
-            st.write(res['hashtags'] or "—")
-            st.markdown("**Mentions:**")
-            st.write(res['mentions'] or "—")
-            st.markdown("**Tokens:**")
-            st.write(res['tokens'])
-            st.markdown("**Lemmas (stopwords removed):**")
-            st.write(res['lemmas'])
-            st.markdown("**Processed text:**")
-            st.success(res['processed_text'])
-
-with right:
-    st.subheader("Batch processing (CSV)")
-    st.info("CSV must contain a column named 'Tweet' (case-sensitive).")
-    uploaded = st.file_uploader("Upload CSV file", type=['csv'])
-    if uploaded is not None:
-        try:
-            df = pd.read_csv(uploaded)
-        except Exception as e:
-            st.error(f"Error reading CSV: {e}")
-            df = None
-
-        if df is not None:
-            if 'Tweet' not in df.columns:
-                st.error("CSV does not contain a 'Tweet' column.")
+    left, right = st.columns([1, 1])
+    with left:
+        st.subheader("Process single text")
+        input_text = st.text_area("Enter text / tweet here:", height=140)
+        if st.button("Process text"):
+            if not input_text or input_text.strip() == "":
+                st.warning("Please enter some text.")
             else:
-                n_preview = st.number_input("Preview rows", min_value=1, max_value=500, value=5)
-                st.write("Preview of original column:")
-                st.write(df['Tweet'].head(n_preview))
+                res = preprocess_row(input_text)
+                st.subheader("Results")
+                st.markdown("**Original text:**")
+                st.write(res['text'])
+                st.markdown("**Cleaned text:**")
+                st.write(res['cleaned'])
+                st.markdown("**Hashtags:**")
+                st.write(res['hashtags'] or "—")
+                st.markdown("**Mentions:**")
+                st.write(res['mentions'] or "—")
+                st.markdown("**Tokens:**")
+                st.write(res['tokens'])
+                st.markdown("**Lemmas (stopwords removed):**")
+                st.write(res['lemmas'])
+                st.markdown("**Processed text:**")
+                st.success(res['processed_text'])
 
-                if st.button("Run preprocessing on uploaded CSV"):
-                    processed = []
-                    for t in df['Tweet'].astype(str).tolist():
-                        processed.append(preprocess_row(t))
-                    proc_df = pd.DataFrame(processed)
-                   
-                    result_df = pd.concat([df.reset_index(drop=True), proc_df.reset_index(drop=True)], axis=1)
-                    st.success(f"Processed {len(result_df)} rows.")
-                    st.write(result_df.head(n_preview))
+    with right:
+        st.subheader("Batch processing (CSV)")
+        st.info("CSV must contain a column named 'Tweet' (case-sensitive).")
+        uploaded = st.file_uploader("Upload CSV file", type=['csv'])
+        if uploaded is not None:
+            try:
+                df = pd.read_csv(uploaded)
+            except Exception as e:
+                st.error(f"Error reading CSV: {e}")
+                df = None
 
-                
-                    csv_bytes = result_df.to_csv(index=False).encode('utf-8')
-                    st.download_button("Download processed CSV", csv_bytes, "processed_tweets.csv", "text/csv")
+            if df is not None:
+                if 'Tweet' not in df.columns:
+                    st.error("CSV does not contain a 'Tweet' column.")
+                else:
+                    n_preview = st.number_input("Preview rows", min_value=1, max_value=500, value=5)
+                    st.write("Preview of original column:")
+                    st.write(df['Tweet'].head(n_preview))
 
-                    if show_tfidf:
-                        st.markdown("#### TF-IDF sample (first rows × first 10 features)")
-                        corpus = result_df['processed_text'].astype(str).tolist()
-                        vec = TfidfVectorizer(max_features=int(tfidf_max_features), sublinear_tf=sublinear_tf, stop_words='english')
-                        X = vec.fit_transform(corpus)
-                        features = vec.get_feature_names_out()[:10]
-                        tfidf_df = pd.DataFrame(X.toarray()[:min(5, X.shape[0]), :10], columns=features)
-                        st.write(tfidf_df)
+                    if st.button("Run preprocessing on uploaded CSV"):
+                        processed = []
+                        for t in df['Tweet'].astype(str).tolist():
+                            processed.append(preprocess_row(t))
+                        proc_df = pd.DataFrame(processed)
+                    
+                        result_df = pd.concat([df.reset_index(drop=True), proc_df.reset_index(drop=True)], axis=1)
+                        st.success(f"Processed {len(result_df)} rows.")
+                        st.write(result_df.head(n_preview))
+
+                    
+                        csv_bytes = result_df.to_csv(index=False).encode('utf-8')
+                        st.download_button("Download processed CSV", csv_bytes, "processed_tweets.csv", "text/csv")
+
+                        if show_tfidf:
+                            st.markdown("#### TF-IDF sample (first rows × first 10 features)")
+                            corpus = result_df['processed_text'].astype(str).tolist()
+                            vec = TfidfVectorizer(max_features=int(tfidf_max_features), sublinear_tf=sublinear_tf, stop_words='english')
+                            X = vec.fit_transform(corpus)
+                            features = vec.get_feature_names_out()[:10]
+                            tfidf_df = pd.DataFrame(X.toarray()[:min(5, X.shape[0]), :10], columns=features)
+                            st.write(tfidf_df)
 
 
-st.markdown("---")
-st.markdown("**Notes:** This tool performs basic preprocessing for prototyping, including stopword removal. For production, extend tokenization, handle emojis, normalise slang, and move heavy processing to background workers.")
+    st.markdown("---")
+    st.markdown("**Notes:** This tool performs basic preprocessing for prototyping, including stopword removal. For production, extend tokenization, handle emojis, normalise slang, and move heavy processing to background workers.")
 
 
+
+if __name__ == "__main__":
+    display_preproccess_content()
