@@ -3,10 +3,11 @@ import re
 import nltk
 from nltk.tokenize import TweetTokenizer
 from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet
 from sklearn.feature_extraction.text import TfidfVectorizer
 from typing import Optional
+from nltk.corpus import wordnet, stopwords
 
+stop_words = set(stopwords.words("english"))
 tweet_tokenizer = TweetTokenizer()
 lemmatizer = WordNetLemmatizer()
 
@@ -22,7 +23,6 @@ def load_data(data_path='../data/twitter_training.csv', text_column='Tweet'):
         return None
 
 def get_wordnet_pos(tag):
-    """Map NLTK POS tags to WordNet POS tags"""
     if tag.startswith('J'):
         return wordnet.ADJ
     elif tag.startswith('V'):
@@ -47,23 +47,28 @@ def clean_and_tokenize(text):
     text = re.sub(r'#', '', text)
     text = re.sub(r'[^A-Za-z0-9\s]', '', text)
     tokens = tweet_tokenizer.tokenize(text)
+    tokens = [token.lower() for token in tokens if token.lower() not in stop_words]
     return tokens
 
 def lemmatize_tokens(tokens):
     """Lemmatizes tokens using POS tagging for context-aware normalization."""
+    if not tokens:
+        return []
     tagged_tokens = nltk.pos_tag(tokens)
     lemmatized_tokens = []
     for word, tag in tagged_tokens:
         wntag = get_wordnet_pos(tag)
-        if isinstance(word, str):
-            lemma = lemmatizer.lemmatize(word, pos=wntag)
-            lemmatized_tokens.append(lemma)
+        lemma = lemmatizer.lemmatize(word, pos=wntag)
+        lemmatized_tokens.append(lemma)
     return lemmatized_tokens
 
 def preprocess_data(df, text_column='Tweet'):
     df[text_column] = df[text_column].fillna('')
     df['hashtags'], df['mentions'] = zip(*df[text_column].apply(extract_features))
     df['tokens'] = df[text_column].apply(clean_and_tokenize)
+    df['tokens'] = df['tokens'].apply(
+        lambda tok_list: [t for t in tok_list if t.lower() not in stop_words]
+    )
     df['lemmas'] = df['tokens'].apply(lemmatize_tokens)
     df['processed_text'] = df['lemmas'].apply(lambda x: ' '.join(x))
     return df
