@@ -47,8 +47,15 @@ with tab0:
 with tab1:
     st.header("Instant Sentiment Analysis")
     user_text = st.text_area("Enter tweet or text for analysis:")
-    if user_text and tfidf_vec and rf_clf:
-        # preprocess text and give it to the vectorizer & model
+    # Check each component separately
+    if not user_text:
+        st.warning("Please enter some text")
+    elif tfidf_vec is None:
+        st.error("TF-IDF vectorizer not loaded")
+    elif rf_clf is None:
+        st.error("Random Forest model not loaded")
+    else:
+        # All good, proceed
         res = preprocess_row(user_text)
         vec = tfidf_vec.transform([res['cleaned']])
         pred = rf_clf.predict(vec)[0]
