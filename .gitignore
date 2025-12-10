@@ -78,7 +78,6 @@ venv.bak/
 # data/
 
 # Model artifacts and checkpoints
-models/
 checkpoints/
 saved_models/
 
